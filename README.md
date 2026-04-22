@@ -7,7 +7,7 @@ Urban Translator is a Google Translate-style app built with Next.js, React, Tail
 - Next.js (App Router)
 - React
 - Tailwind CSS
-- Gemini API (REST via configurable `GEMINI_MODEL`, default `gemini-1.5-flash`)
+- Gemini API (REST via configurable `GEMINI_MODEL`, default `gemini-2.5-flash`)
 
 ## Setup
 
@@ -24,10 +24,11 @@ Create `.env.local` in the project root:
 
 ```bash
 GEMINI_API_KEY=your_key_here
-GEMINI_MODEL=gemini-1.5-flash
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
-`GEMINI_MODEL` is optional. If omitted, the app defaults to `gemini-1.5-flash`.
+`GEMINI_MODEL` is optional. If omitted, the app defaults to `gemini-2.5-flash`.
+You can provide either `gemini-2.5-flash` or `models/gemini-2.5-flash` and the app will normalize it.
 
 ## Features
 
