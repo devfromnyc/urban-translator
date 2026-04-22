@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { translateWithGemini } from "@/lib/gemini";
+import { GeminiApiError, translateWithGemini } from "@/lib/gemini";
 
 type TranslateBody = {
   text?: string;
@@ -36,6 +36,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ result });
   } catch (error) {
+    if (error instanceof GeminiApiError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
+
     const message =
       error instanceof Error
         ? error.message

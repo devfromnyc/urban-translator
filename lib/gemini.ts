@@ -15,15 +15,44 @@ type GeminiApiResponse = {
   };
 };
 
+export class GeminiApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "GeminiApiError";
+    this.status = status;
+  }
+}
+
+function getGeminiErrorMessage(status: number, apiMessage?: string) {
+  if (status === 403) {
+    return (
+      apiMessage ||
+      "Gemini rejected the request (403). Check that your API key is valid and has permission to use this model."
+    );
+  }
+
+  if (status === 429) {
+    return (
+      apiMessage ||
+      "Gemini quota is exceeded (429). Check your usage limits, billing plan, or try a lower-cost model."
+    );
+  }
+
+  return apiMessage || `Gemini API request failed with status ${status}.`;
+}
+
 export async function translateWithGemini({
   text,
   style,
   context,
 }: GeminiTranslateInput) {
   const apiKey = process.env.GEMINI_API_KEY;
+  const model = process.env.GEMINI_MODEL?.trim() || "gemini-1.5-flash";
 
   if (!apiKey) {
-    throw new Error("Missing GEMINI_API_KEY environment variable.");
+    throw new GeminiApiError("Missing GEMINI_API_KEY environment variable.", 500);
   }
 
   const prompt = [
@@ -36,7 +65,7 @@ export async function translateWithGemini({
     .join("\n");
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: {
@@ -55,7 +84,10 @@ export async function translateWithGemini({
   const data = (await response.json()) as GeminiApiResponse;
 
   if (!response.ok) {
-    throw new Error(data.error?.message || "Gemini API request failed.");
+    throw new GeminiApiError(
+      getGeminiErrorMessage(response.status, data.error?.message),
+      response.status,
+    );
   }
 
   const result = data.candidates?.[0]?.content?.parts
@@ -64,7 +96,7 @@ export async function translateWithGemini({
     .trim();
 
   if (!result) {
-    throw new Error("Gemini did not return a translated response.");
+    throw new GeminiApiError("Gemini did not return a translated response.", 502);
   }
 
   return result;
